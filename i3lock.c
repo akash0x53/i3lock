@@ -26,8 +26,9 @@
 #include <xkbcommon/xkbcommon.h>
 #include <xkbcommon/xkbcommon-compose.h>
 #include <xkbcommon/xkbcommon-x11.h>
-#include <cairo.h>
+#include <cairo/cairo.h>
 #include <cairo/cairo-xcb.h>
+#include <gdk-pixbuf/gdk-pixbuf.h>
 
 #include "i3lock.h"
 #include "xcb.h"
@@ -75,6 +76,7 @@ static uint8_t xkb_base_event;
 static uint8_t xkb_base_error;
 
 cairo_surface_t *img = NULL;
+cairo_surface_t *wp_img = NULL;
 bool tile = false;
 bool ignore_empty_password = false;
 bool skip_repeated_empty_password = false;
@@ -289,8 +291,13 @@ static void input_done(void) {
     pam_state = STATE_PAM_WRONG;
     failed_attempts += 1;
     clear_input();
+    
     if (unlock_indicator)
         redraw_screen();
+
+    if (wp_img) {
+        redraw_screen();
+    }
 
     /* Clear this state after 2 seconds (unless the user enters another
      * password during that time). */
@@ -763,6 +770,7 @@ int main(int argc, char *argv[]) {
     struct passwd *pw;
     char *username;
     char *image_path = NULL;
+    char *wrong_pass_img_path = NULL;
     int ret;
     struct pam_conv conv = {conv_callback, NULL};
     int curs_choice = CURS_NONE;
@@ -779,6 +787,7 @@ int main(int argc, char *argv[]) {
         {"help", no_argument, NULL, 'h'},
         {"no-unlock-indicator", no_argument, NULL, 'u'},
         {"image", required_argument, NULL, 'i'},
+        {"wrong-pass-meme", required_argument, NULL, 'w'},
         {"tiling", no_argument, NULL, 't'},
         {"ignore-empty-password", no_argument, NULL, 'e'},
         {"inactivity-timeout", required_argument, NULL, 'I'},
@@ -790,7 +799,7 @@ int main(int argc, char *argv[]) {
     if ((username = pw->pw_name) == NULL)
         errx(EXIT_FAILURE, "pw->pw_name is NULL.\n");
 
-    char *optstring = "hvnbdc:p:ui:teI:f";
+    char *optstring = "hvnbdc:p:ui:teI:fw:";
     while ((o = getopt_long(argc, argv, optstring, longopts, &optind)) != -1) {
         switch (o) {
             case 'v':
@@ -826,6 +835,9 @@ int main(int argc, char *argv[]) {
             case 'i':
                 image_path = strdup(optarg);
                 break;
+            case 'w':
+                wrong_pass_img_path = strdup(optarg);
+                break;
             case 't':
                 tile = true;
                 break;
@@ -850,7 +862,7 @@ int main(int argc, char *argv[]) {
                 break;
             default:
                 errx(EXIT_FAILURE, "Syntax: i3lock [-v] [-n] [-b] [-d] [-c color] [-u] [-p win|default]"
-                                   " [-i image.png] [-t] [-e] [-I timeout] [-f]");
+                                   " [-i image.png] [-t] [-e] [-I timeout] [-f] [-w anime.gif]");
         }
     }
 
@@ -952,6 +964,17 @@ int main(int argc, char *argv[]) {
             fprintf(stderr, "Could not load image \"%s\": %s\n",
                     image_path, cairo_status_to_string(cairo_surface_status(img)));
             img = NULL;
+        }
+    }
+
+    /* TODO: Animated GIF */
+    if (wrong_pass_img_path) {
+        wp_img = cairo_image_surface_create_from_png(wrong_pass_img_path);
+        /* In case loading failed, we just pretend no -i was specified. */
+        if (cairo_surface_status(wp_img) != CAIRO_STATUS_SUCCESS) {
+            fprintf(stderr, "Could not load image \"%s\": %s\n",
+                    wrong_pass_img_path, cairo_status_to_string(cairo_surface_status(wp_img)));
+            wp_img = NULL;
         }
     }
 

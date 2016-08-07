@@ -21,6 +21,8 @@
 #include "unlock_indicator.h"
 #include "xinerama.h"
 
+#include<gdk-pixbuf/gdk-pixbuf.h>
+
 #define BUTTON_RADIUS 90
 #define BUTTON_SPACE (BUTTON_RADIUS + 5)
 #define BUTTON_CENTER (BUTTON_RADIUS + 5)
@@ -50,6 +52,11 @@ extern char *modifier_string;
 
 /* A Cairo surface containing the specified image (-i), if any. */
 extern cairo_surface_t *img;
+
+/* GdkPixbuf image (-w)
+ * TODO: GdkPixbufAnimated 
+ */
+extern cairo_surface_t *wp_img;
 
 /* Whether the image should be tiled. */
 extern bool tile;
@@ -139,7 +146,14 @@ xcb_pixmap_t draw_image(uint32_t *resolution) {
         cairo_rectangle(xcb_ctx, 0, 0, resolution[0], resolution[1]);
         cairo_fill(xcb_ctx);
     }
+    
+    
+    if (!unlock_indicator && (pam_state == STATE_PAM_WRONG)) {
+        cairo_set_source_surface(xcb_ctx, wp_img, resolution[0]/3, resolution[1]/5);
+        cairo_paint(xcb_ctx);
+    }
 
+    
     if (unlock_indicator &&
         (unlock_state >= STATE_KEY_PRESSED || pam_state > STATE_PAM_IDLE)) {
         cairo_scale(ctx, scaling_factor(), scaling_factor());
@@ -221,6 +235,7 @@ xcb_pixmap_t draw_image(uint32_t *resolution) {
                 break;
         }
 
+        
         if (text) {
             cairo_text_extents_t extents;
             double x, y;
