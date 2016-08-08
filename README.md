@@ -38,8 +38,8 @@ press enter.
 
 Show Meme on Incorrect Password attempt
 ------
-Use `-w /path/to/meme.png`
-<img src="./i3lock_opt.gif" width=480 height=360/>
+Use `-w /path/to/meme.png`  
+<img src="./i3lock_opt.gif" width=520 height=360/>
 
 Upstream
 --------
