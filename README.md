@@ -36,6 +36,11 @@ Running i3lock
 Simply invoke the 'i3lock' command. To get out of it, enter your password and
 press enter.
 
+Show Meme on Incorrect Password attempt
+------
+Use `-w /path/to/meme.png`
+<img src="./i3lock_opt.gif" width=480 height=360/>
+
 Upstream
 --------
 Please submit pull requests to https://github.com/i3/i3lock
